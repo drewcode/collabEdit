@@ -8,6 +8,7 @@ var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
 var nextId = 1;
 var clients = {};
+var exclusion_list = {};
 
 var app = express();
 
@@ -34,8 +35,13 @@ app.post('/message', bodyParser.json(), function(req, res) {
   var outMsg = JSON.stringify(req.body);  
   console.log(outMsg+"\n");
   Object.keys(clients).forEach(function(clientId) {
+    if(exclusion_list[clientId]!=true){
     clients[clientId].res.write('event: message\n');
     clients[clientId].res.write('data: ' + outMsg + '\n\n');
+    }
+    else {
+      console.log('ignoring : ' + clientId); 
+    }
   });
   res.sendStatus(200);
 });
@@ -47,6 +53,28 @@ app.get('/editor', function(req, res) {
     res.redirect('/editor.html');
   }
 });
+
+app.get('/list', getList);
+
+app.get('/sleep',function(req, res) {
+  console.log("client requested sleep\n");
+  if(!req.cookies.client_id) {
+    res.end('Unauthorized')
+  } else {
+    exclusion_list[req.cookies.client_id] = true;
+  }
+});
+
+app.get('/unsleep',function(req, res) {
+  console.log("client requested unsleep\n");
+  if(!req.cookies.client_id) {
+    res.end('Unauthorized')
+  } else {
+    if(exclusion_list[req.cookies.client_id] == true)
+      exclusion_list[req.cookies.client_id]=false;
+  }
+});
+
 
 function displayForm(req, res) {
     fs.readFile('./public/login.html', function (err, data) {
@@ -80,3 +108,13 @@ function processAllFieldsOfTheForm(req, res) {
 app.listen(8000, function() {
   console.log("server listening on 8000");
 });
+
+function getList(req, res) {
+  fs.readFile('./public/data/list.txt', function(err, data) {
+    var json = JSON.parse(data);
+    var data = json.filter(function(js) {
+      return js.substring(0, parseInt(req.query.l)) === req.query.v;
+    });
+    res.end(JSON.stringify(data));  
+  });
+}

@@ -33,6 +33,10 @@
             <p>We use the latest technologies to give u seamless ability to edit and collaborate while writing code. No more is coding a boring single person job. <br/> Invite over all your friends and type away simultaneously and we'll take care about putting it all together !</p>
             <br/><br/>
             <p>We now have support for over <b>250 languages</b><br/>Check now if we support YOUR Favourite Language : </p> 
+            <input type="text" list="languages" id="input">
+            <datalist id="languages">
+                
+            </datalist>
             <br/>
         </center>
         <br/><br/>
@@ -45,6 +49,37 @@
                     </ul>
             </div>
         </footer>
+
+        <script type="text/javascript">
+            
+            document.addEventListener('DOMContentLoaded', function() {
+                var xhr = new XMLHttpRequest();
+                var list = document.querySelector("#languages");
+                var input = document.querySelector("#input");
+                input.addEventListener('keyup', listener);
+                
+
+                function listener() {
+
+                    console.log("Called" + input.value);
+                    input.removeEventListener('keypress', listener);
+                    xhr.open('get', `/list?v=${input.value}&l=${input.value.length}`, true); 
+                    xhr.onreadystatechange = function() {
+                        if(xhr.readyState === 4 && xhr.status === 200) {
+                            list.innerHTML = "";
+                            console.log("Res");
+                            var content = JSON.parse(xhr.responseText);
+                            content.forEach(function(lang) {
+                                var option = document.createElement("option");
+                                list.innerHTML += `<option value="${lang}">`;
+                            });
+                        }
+                    }
+                    xhr.send();    
+                };
+            });
+        </script>
+
     </body>
 
 </html>
